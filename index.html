@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Tester & Generator</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            color: #fff;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .left, .right {
+            flex: 1;
+            padding: 30px;
+            text-align: center;
+        }
+        .left {
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+        }
+        input[type="password"]::placeholder, input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #ff6f61;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #ff4d4d;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .result.success {
+            color: #4caf50;
+        }
+        .result.error {
+            color: #ff4d4d;
+        }
+        .requirements {
+            margin-top: 20px;
+            text-align: left;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .requirements li {
+            margin-bottom: 5px;
+        }
+        .requirements li span {
+            margin-left: 10px;
+        }
+        .requirements li.success {
+            color: #4caf50;
+        }
+        .requirements li.error {
+            color: #ff4d4d;
+        }
+        .generated-password {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Section: Password Strength Checker -->
+        <div class="left">
+            <h2>Password Strength Checker</h2>
+            <input type="password" id="password" placeholder="Enter your password">
+            <button onclick="checkPassword()">Check Password</button>
+            <div class="result" id="result"></div>
+
+            <!-- Password Requirements -->
+            <ul class="requirements" id="requirements">
+                <li><span id="length">At least 8 characters</span></li>
+                <li><span id="uppercase">At least one uppercase letter (A-Z)</span></li>
+                <li><span id="lowercase">At least one lowercase letter (a-z)</span></li>
+                <li><span id="digit">At least one digit (0-9)</span></li>
+                <li><span id="special">At least one special character (!@#$%^&*)</span></li>
+                <li><span id="common">Not a common password</span></li>
+                <li><span id="repetitive">No repetitive characters (e.g., "aaaaaa")</span></li>
+            </ul>
+        </div>
+
+        <!-- Right Section: Strong Password Generator -->
+        <div class="right">
+            <h2>Strong Password Generator</h2>
+            <button onclick="generatePassword()">Generate Password</button>
+            <div class="generated-password" id="generatedPassword"></div>
+        </div>
+    </div>
+
+    <script>
+        async function checkPassword() {
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            const requirements = document.querySelectorAll('.requirements li span');
+
+            // Clear previous result and reset styles
+            resultDiv.textContent = '';
+            requirements.forEach(span => {
+                span.classList.remove('success', 'error');
+            });
+
+            // Send password to the server for checking
+            try {
+                const response = await fetch('/check_password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password: password })
+                });
+
+                const data = await response.json();
+
+                // Display the result
+                resultDiv.textContent = data.result;
+                if (data.result.includes("strong")) {
+                    resultDiv.classList.add('success');
+                    resultDiv.classList.remove('error');
+                } else {
+                    resultDiv.classList.add('error');
+                    resultDiv.classList.remove('success');
+                }
+
+                // Update password requirement statuses
+                updateRequirements(password);
+
+            } catch (error) {
+                resultDiv.textContent = 'An error occurred. Please try again.';
+                resultDiv.classList.add('error');
+                resultDiv.classList.remove('success');
+            }
+        }
+
+        function updateRequirements(password) {
+            const length = document.getElementById('length');
+            const uppercase = document.getElementById('uppercase');
+            const lowercase = document.getElementById('lowercase');
+            const digit = document.getElementById('digit');
+            const special = document.getElementById('special');
+            const common = document.getElementById('common');
+            const repetitive = document.getElementById('repetitive');
+
+            // Check length
+            if (password.length >= 8) {
+                length.classList.add('success');
+                length.classList.remove('error');
+            } else {
+                length.classList.add('error');
+                length.classList.remove('success');
+            }
+
+            // Check uppercase
+            if (/[A-Z]/.test(password)) {
+                uppercase.classList.add('success');
+                uppercase.classList.remove('error');
+            } else {
+                uppercase.classList.add('error');
+                uppercase.classList.remove('success');
+            }
+
+            // Check lowercase
+            if (/[a-z]/.test(password)) {
+                lowercase.classList.add('success');
+                lowercase.classList.remove('error');
+            } else {
+                lowercase.classList.add('error');
+                lowercase.classList.remove('success');
+            }
+
+            // Check digit
+            if (/[0-9]/.test(password)) {
+                digit.classList.add('success');
+                digit.classList.remove('error');
+            } else {
+                digit.classList.add('error');
+                digit.classList.remove('success');
+            }
+
+            // Check special character
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+                special.classList.add('success');
+                special.classList.remove('error');
+            } else {
+                special.classList.add('error');
+                special.classList.remove('success');
+            }
+
+            // Check common passwords
+            const commonPasswords = [
+                "123456", "password", "123456789", "12345678", "12345", "1234567",
+                "qwerty", "abc123", "111111", "123123", "admin", "letmein", "welcome"
+            ];
+            if (!commonPasswords.includes(password.toLowerCase())) {
+                common.classList.add('success');
+                common.classList.remove('error');
+            } else {
+                common.classList.add('error');
+                common.classList.remove('success');
+            }
+
+            // Check repetitive characters
+            const counter = {};
+            for (const char of password) {
+                counter[char] = (counter[char] || 0) + 1;
+            }
+            const maxRepetition = Math.max(...Object.values(counter));
+            if (maxRepetition <= password.length / 2) {
+                repetitive.classList.add('success');
+                repetitive.classList.remove('error');
+            } else {
+                repetitive.classList.add('error');
+                repetitive.classList.remove('success');
+            }
+        }
+
+        function generatePassword() {
+            const length = 12;
+            const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+            let password = "";
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * charset.length);
+                password += charset[randomIndex];
+            }
+            document.getElementById('generatedPassword').textContent = password;
+        }
+    </script>
+</body>
+</html>
